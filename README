@@ -1,0 +1,5 @@
+Shell script for provisioning Hadoop on single node with functional Web-UI
+
+To run the script, you need to have a fresh installation of Ubuntu 20+ on your machine. And it needs root access to install the required packages.
+
+DISCLAIMER: This script is for educational purposes only. It is not recommended to use this script in production environments.
