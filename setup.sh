@@ -3,6 +3,7 @@
 set -e
 set -u
 
+# Define constants
 HADOOP_VERSION="3.4.0"
 HADOOP_USER="hadoop"
 JAVA_PACKAGE="openjdk-8-jdk"
@@ -11,12 +12,14 @@ HADOOP_FILE="hadoop-$HADOOP_VERSION.tar.gz"
 HADOOP_DIR="hadoop-$HADOOP_VERSION"
 DATA_NODE_IP=$(hostname -I | awk '{print $1}')
 
+# Function to install a package if it's not already installed
 install_package() {
   if ! dpkg -l | grep -qw $1; then
     sudo apt-get install $1 -y
   fi
 }
 
+# Function to create a user if it doesn't already exist
 create_user() {
   if ! id -u $1 > /dev/null 2>&1; then
     sudo adduser $1
@@ -24,41 +27,40 @@ create_user() {
   fi
 }
 
+# Update and upgrade the system
 sudo apt-get update
 sudo apt-get upgrade -y
 
+# Install Java and create Hadoop user
 install_package $JAVA_PACKAGE
 create_user $HADOOP_USER
 
+# Switch to Hadoop user and set up Hadoop
 sudo su - $HADOOP_USER <<EOF
 
-HADOOP_VERSION="3.4.0"
-HADOOP_USER="hadoop"
-JAVA_PACKAGE="openjdk-8-jdk"
-HADOOP_URL="https://downloads.apache.org/hadoop/common/hadoop-$HADOOP_VERSION/hadoop-$HADOOP_VERSION.tar.gz"
-HADOOP_FILE="hadoop-$HADOOP_VERSION.tar.gz"
-HADOOP_DIR="hadoop-$HADOOP_VERSION"
-DATA_NODE_IP=$(hostname -I | awk '{print $1}')
-
+# Function to download a file if it doesn't already exist
 download_file() {
   if [[ ! -f \$1 ]]; then
     curl -O -L --retry 5 \$2
   fi
 }
 
+# Function to extract a file if the directory doesn't already exist
 extract_file() {
   if [[ ! -d \$1 ]]; then
     tar -xzvf \$2
   fi
 }
 
+# Download and extract Hadoop
 download_file $HADOOP_FILE $HADOOP_URL
 extract_file $HADOOP_DIR $HADOOP_FILE
 
+# Move Hadoop directory and define HADOOP_HOME
 mv $HADOOP_DIR hadoop
-
 HADOOP_HOME="/home/hadoop/hadoop"
 
+# Add Hadoop environment variables to .bashrc if they're not already there
 if ! grep -q "HADOOP_HOME" ~/.bashrc; then
   echo "export HADOOP_HOME=/home/hadoop/hadoop" >> ~/.bashrc
   echo "export HADOOP_INSTALL=\$HADOOP_HOME" >> ~/.bashrc
@@ -71,11 +73,17 @@ if ! grep -q "HADOOP_HOME" ~/.bashrc; then
   echo "export HADOOP_OPTS=\"-Djava.library.path=\$HADOOP_HOME/lib/native\"" >> ~/.bashrc
 fi
 
+# Source .bashrc to apply changes
 source ~/.bashrc
 
+# Navigate to Hadoop configuration directory and set JAVA_HOME
 cd ./hadoop/etc/hadoop
-
 echo "export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64" >> hadoop-env.sh
+
+
+###
+### CONFIGURATION FILES
+###
 
 cat <<EOF1 > core-site.xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -177,13 +185,14 @@ cat <<EOF4 > yarn-site.xml
 </configuration>
 EOF4
 
-cd
+###
+### CONFIGURATION FILES
+###
 
-mkdir -p tmpdata
-mkdir -p dfsdata/namenode
-mkdir -p dfsdata/datanode
+# Create necessary directories
+mkdir -p ~/tmpdata ~/dfsdata/namenode ~/dfsdata/datanode
 
-chmod -R 755 tmpdata
-chmod -R 755 dfsdata
+# Set permissions for new directories
+chmod -R 755 ~/tmpdata ~/dfsdata
 
 EOF
