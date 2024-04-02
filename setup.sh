@@ -38,6 +38,15 @@ create_user $HADOOP_USER
 # Switch to Hadoop user and set up Hadoop
 sudo su - $HADOOP_USER <<EOF
 
+# generate ssh key
+ssh-keygen -t rsa -P "" -f ~/.ssh/id_rsa
+cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+
+ssh-keyscan -H localhost >> ~/.ssh/known_hosts
+
+# Disable strict host key checking
+echo "    StrictHostKeyChecking no" >> ~/.ssh/config
+
 # Function to download a file if it doesn't already exist
 download_file() {
   if [[ ! -f \$1 ]]; then
@@ -172,7 +181,7 @@ cat <<EOF4 > yarn-site.xml
   </property>
   <property>
     <name>yarn.resourcemanager.hostname</name>
-    <value>localhost</value>
+    <value>$DATA_NODE_IP</value>
   </property>
   <property>
     <name>yarn.acl.enable</name>
